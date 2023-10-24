@@ -40,26 +40,26 @@ class MindWaveMobileThread(threading.Thread):
                 if not data:
                     continue
                 byte_data = np.frombuffer(data, dtype=np.uint8)
-                aa_index = np.where(byte_data == 0xAA)[0]  # gelen veri pakedi içinde 0xAA ile başlayan verileri arar
+                aa_index = np.where(byte_data == 0xAA)[0]  #searches for data starting with 0xAA in the incoming data packet
                 i = 0
                 while i < len(aa_index) - 1:
-                    if aa_index[i + 1] - aa_index[i] == 1: #rdışık iki 0xAA baytının başlangıç ve bitiş indeksleri belirlenir. aa_index[i] konumu ile bir sonraki konum (aa_index[i + 1]) arasındaki farkın 1 olduğu kontrol edilir. Bu, ardışık 0xAA baytlarının olduğunu gösterir. Başlangıç indeksi aa_start değişkenine atanır ve bitiş indeksi aa_end değişkenine atanır.
+                    if aa_index[i + 1] - aa_index[i] == 1: #The starting and ending indexes of two consecutive 0xAA bytes are determined. It is checked that the difference between position aa_index[i] and the next position (aa_index[i + 1]) is 1. This indicates that there are consecutive 0xAA bytes. The starting index is assigned to the variable aa_start and the ending index is assigned to the variable aa_end.
                         aa_start = aa_index[i]
                         aa_end = aa_start + 2
                         
-                        while i < len(aa_index) - 1 and aa_index[i + 1] - aa_index[i] == 1: #Bu iç içe geçmiş döngü, ardışık 0xAA baytlarının tamamını bulur. İç içe geçmiş döngüde, eğer bir sonraki konum ile mevcut konum arasındaki fark hala 1 ise, aa_end indeksini günceller ve i sayaçını artırır. Bu, ardışık baytların tamamını bulmak için döngüyü gezinmeye devam eder.
+                        while i < len(aa_index) - 1 and aa_index[i + 1] - aa_index[i] == 1: #This nested loop finds all consecutive 0xAA bytes. In the nested loop, if the difference between the next position and the current position is still 1, it updates the index aa_end and increments the counter i. This continues navigating the loop to find all consecutive bytes.
                             aa_end = aa_index[i + 1] + 1
                             i += 1
                         
                         if aa_end < len(byte_data) and byte_data[aa_start + 2] != 0x04:
                             aa_sequence = byte_data[aa_start:aa_end]
                         
-                    i += 1 #Döngünün sonunda, i sayaç değeri artırılır ve bir sonraki aa_index konumunu kontrol etmek için döngü bir sonraki adıma geçer.
+                    i += 1 #At the end of the loop, the i counter value is incremented and the loop moves to the next step to check the next aa_index position.
                 
                 if len(aa_index) == 0:
                     continue    
                 
-                aa_start = aa_index[0]  # ilk 0xAA byte'nın konumunu belirler
+                aa_start = aa_index[0]  # determines the position of the first 0xAA byte
                 if byte_data[aa_start + 2] != 0x04:
                     length = byte_data[aa_start + 2] 
                     if length == 0x20:
@@ -79,7 +79,7 @@ class MindWaveMobileThread(threading.Thread):
                             self.dataRecvCallbackFunc(self._attention, self._meditation, self._signalQuality)      
             time.sleep(0.01)
         except:
-            print("Bağlantı koptu veri akışı kesildi")
+            print("Connection lost, data flow interrupted")
     
     def setDataReceiveCallback(self, pFunc):
         self.dataRecvCallbackFunc = pFunc
@@ -108,4 +108,4 @@ class MindWaveMobileThread(threading.Thread):
             # Close the Bluetooth connection when reading is finished
             self.stop()
         except:
-            print("veri akışı kesildi")
+            print("data flow has ended")
